@@ -70,7 +70,10 @@ const app = initializeApp(firebaseConfig);
   // >>> FINE <<<
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+
+// 🔴 disabilita check eval (necessario per GitHub Pages CSP)
+const db = getFirestore(app, { ignoreUndefinedProperties: true });
+
 
   const map = L.map('map').setView([40.85, 14.25], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
