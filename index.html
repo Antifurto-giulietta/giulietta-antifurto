@@ -46,14 +46,23 @@
   // https://firebase.google.com/docs/web/setup#available-libraries
 
   // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyBMOjoYPuHQVX3JjRywVDyp1wOpmbHpPV8",
-    authDomain: "giuliettaantifurto.firebaseapp.com",
-    projectId: "giuliettaantifurto",
-    storageBucket: "giuliettaantifurto.firebasestorage.app",
-    messagingSenderId: "800289759238",
-    appId: "1:800289759238:web:5e975dac11b7a34a542387"
-  };
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBMOjoYPuHQVX3JjRywVDyp1wOpmbHpPV8",
+  authDomain: "giuliettaantifurto.firebaseapp.com",
+  projectId: "giuliettaantifurto",
+  storageBucket: "giuliettaantifurto.firebasestorage.app",
+  messagingSenderId: "800289759238",
+  appId: "1:800289759238:web:5e975dac11b7a34a542387"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
