@@ -92,7 +92,7 @@ function mapGps(p){
   for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
     if(y<0||y>=N)continue;
     const tx=((x%N)+N)%N,k=`${z}/${tx}/${y}`;visible.add(k);
-    let img=tileImages.get(k);if(!img){img=document.createElement('img');img.alt='';img.referrerPolicy='no-referrer';img.src='https://tile.openstreetmap.org/'+k+'.png';tiles.appendChild(img);tileImages.set(k,img)}
+    let img=tileImages.get(k);if(!img){img=document.createElement('img');img.alt='';img.referrerPolicy='strict-origin-when-cross-origin';img.src='https://tile.openstreetmap.org/'+k+'.png';tiles.appendChild(img);tileImages.set(k,img)}
     img.style.left=(x*size-cx+w/2)+'px';img.style.top=(y*size-cy+h/2)+'px';
   }
   for(const [k,img] of tileImages){if(!visible.has(k)){img.remove();tileImages.delete(k)}}
