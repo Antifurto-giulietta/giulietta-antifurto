@@ -1,141 +1,156 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <title>Giulietta Antifurto – Tracking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-    }
-
-    #top {
-      padding: 12px;
-      background: #ffffff;
-      border-bottom: 1px solid #ddd;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-
-    .card {
-      background: #fafafa;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 14px;
-    }
-
-    .value {
-      font-weight: bold;
-      font-size: 16px;
-    }
-
-    #map {
-      height: 70vh;
-    }
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Giulietta Security · Controllo remoto</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:dark;background:#0c121d;color:#eaf2fa}
+*{box-sizing:border-box}body{margin:0}main{max-width:780px;margin:auto;padding:22px 16px 50px}
+h1{font-size:1.7rem;margin:5px 0 18px}h2{font-size:1.15rem;margin:0 0 12px}
+.card{background:#192536;border:1px solid #33445b;border-radius:14px;padding:17px;margin:13px 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+small,.muted{color:#b6c6d8}p{line-height:1.5}input,button{font:inherit;border-radius:8px;padding:11px 12px}
+input{display:block;width:100%;background:#0f1928;border:1px solid #57718c;color:#fff;margin:7px 0 14px}
+label{display:block;margin-top:7px;font-size:.92rem}button{background:#25415c;color:#fff;border:1px solid #597998;cursor:pointer;margin:4px 4px 4px 0}
+button:hover:not(:disabled){background:#346184}button:disabled{cursor:wait;opacity:.45}.danger{border-color:#b45b5b;background:#502830}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pill{padding:8px;border-radius:9px;background:#101c2b}
+strong{font-weight:700}.ok{color:#8de2aa}.warn{color:#ffd387}.bad{color:#ff9e9e}
+#map{height:310px;position:relative;overflow:hidden;border-radius:10px;background-color:#17283a;background-image:linear-gradient(90deg,#2c4256 1px,transparent 1px),linear-gradient(#2c4256 1px,transparent 1px);background-size:64px 64px}
+#tiles{position:absolute;inset:0}#tiles img{position:absolute;width:256px;height:256px;max-width:none}
+#marker{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:#e9484f;border:3px solid white;box-shadow:0 0 0 7px #e9484f48;z-index:3;display:none}
+#mapinfo{position:absolute;top:8px;left:8px;right:8px;padding:7px 10px;border-radius:7px;text-align:center;background:#0e1928df;z-index:4;font-size:.82rem}
+#attrib{position:absolute;bottom:3px;right:4px;background:#0e1928cc;z-index:4;padding:2px 4px;font-size:.68rem}
+#msg{min-height:24px;overflow-wrap:anywhere}.hide{display:none!important}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
 </head>
-
-<body>
-
-<div id="top">
-  <div class="grid">
-    <div class="card">Device<br><span class="value">Giulietta_Antifurto</span></div>
-    <div class="card">Ultimo aggiornamento<br><span class="value" id="last">-</span></div>
-    <div class="card">Pompa<br><span class="value" id="pump">-</span></div>
-    <div class="card">Allarme<br><span class="value" id="alarm">-</span></div>
-    <div class="card">Tracking<br><span class="value" id="tracking">-</span></div>
-    <div class="card">Velocità<br><span class="value" id="speed">-</span></div>
+<body><main>
+<div class="top"><div><small>ALFA ROMEO · CONNESSIONE INTERNET</small><h1>Giulietta Security</h1></div><button id="logout" class="hide">Esci</button></div>
+<section class="card" id="signin">
+  <h2>Accesso proprietario</h2>
+  <p class="muted">Accedi con l'account autorizzato Firebase. Non inserire qui PIN locale, TRACK_AUTH o credenziali della SIM.</p>
+  <form id="loginform"><label>Email<input id="email" type="email" required autocomplete="username"></label>
+  <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
+  <button type="submit">Accedi</button></form><p id="loginmsg"></p>
+</section>
+<section id="dashboard" class="hide">
+  <div class="card"><h2>Stato antifurto</h2>
+    <div class="grid"><div class="pill">Antifurto<br><strong id="armed">In attesa</strong></div>
+    <div class="pill">Tracking<br><strong id="tracking">In attesa</strong></div>
+    <div class="pill">Allarme<br><strong id="alarm">In attesa</strong></div>
+    <div class="pill">Telefonate<br><strong id="calls">In attesa</strong></div>
+    <div class="pill">Ultimo contatto<br><strong id="contact">In attesa</strong></div>
+    <div class="pill">Comando remoto<br><strong id="command">Nessuno</strong></div></div>
+    <p class="muted">Il comando è confermato soltanto quando arriva la risposta dell'ESP32. A riposo il dispositivo verifica i comandi circa ogni 60 secondi.</p>
   </div>
-</div>
-
-<div id="map"></div>
-
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-  // ================= CONFIG =================
-  const DEVICE_ID = "Giulietta_Antifurto";
-  const BASE_URL = "https://europe-west1-giuliettaantifurto.cloudfunctions.net";
-  // ==========================================
-
-  // Mappa
-  const map = L.map("map").setView([40.85, 14.25], 12);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap"
-  }).addTo(map);
-
-  let marker = L.marker([40.85, 14.25]).addTo(map);
-  let polyline = L.polyline([], { color: "red", weight: 4 }).addTo(map);
-
-  function formatTime(ts) {
-    if (!ts) return "-";
-    return new Date(ts * 1000).toLocaleString("it-IT");
+  <div class="card"><h2>Comandi via Internet</h2>
+    <button data-action="ARM">Arma</button><button data-action="DISARM" class="danger">Disarma</button>
+    <button data-action="TRACK_ON">Tracking ON</button><button data-action="TRACK_OFF">Tracking OFF</button>
+    <button data-action="STOP_CALL">Ferma chiamate</button>
+    <p id="msg" role="status" aria-live="polite"></p>
+    <small class="warn">Prototipo di banco: nessuna uscita collegata alla pompa, nessun comando CAN. Tracking automatico soltanto in allarme; altrimenti soltanto a richiesta.</small>
+  </div>
+  <div class="card"><h2>Ultima posizione trasmessa</h2><div id="map"><div id="tiles"></div><div id="marker"></div>
+    <div id="mapinfo">In attesa di coordinate GPS pubblicate...</div><span id="attrib">&copy; OpenStreetMap contributors</span></div>
+    <p id="coords" class="muted">Nessuna posizione disponibile.</p>
+    <small>Quando il tracking è OFF, qui rimane visibile l'ultima posizione ricevuta, non una localizzazione in tempo reale. La cartografia usa OpenStreetMap.</small>
+  </div>
+</section>
+</main>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+// Copiare SOLTANTO i dati PUBBLICI di "Impostazioni progetto > Le tue app > Configurazione SDK".
+// apiKey e appId Firebase web NON sono TRACK_AUTH, COMMAND_PIN o segreti modem.
+const firebaseConfig={
+  apiKey:'AIzaSyBMOjoYPuHQVX3JjRywVDyp1wOpmbHpPV8',
+  authDomain:'giuliettaantifurto.firebaseapp.com',
+  projectId:'giuliettaantifurto',
+  appId:'1:800289759238:web:5e975dac11b7a34a542387'
+};
+const API='https://europe-west1-giuliettaantifurto.cloudfunctions.net/';
+const DEVICE='Giulietta_Antifurto';
+const $=id=>document.getElementById(id);
+const app=initializeApp(firebaseConfig),auth=getAuth(app);
+let busy=false, pendingId=null,refreshTimer=null;
+const tileImages=new Map(),z=15,size=256,N=2**z;
+function mapGps(p){
+  const lat=Number(p?.lat),lon=Number(p?.lon),ts=Number(p?.ts);
+  if(!p||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180){
+    $('mapinfo').textContent='Nessuna posizione GPS trasmessa';$('marker').style.display='none';return;
   }
-
-  async function loadLast() {
-    try {
-      const res = await fetch(`${BASE_URL}/last?device=${DEVICE_ID}`);
-      if (!res.ok) return;
-
-      const d = await res.json();
-
-      document.getElementById("last").textContent = formatTime(d.ts);
-      document.getElementById("pump").textContent = d.pump ? "ON" : "OFF";
-      document.getElementById("alarm").textContent = d.alarm ? "ATTIVO" : "NO";
-      document.getElementById("tracking").textContent = d.tracking ? "ON" : "OFF";
-      document.getElementById("speed").textContent = (d.speed || 0).toFixed(1) + " km/h";
-
-      if (typeof d.lat === "number" && typeof d.lon === "number") {
-        marker.setLatLng([d.lat, d.lon]);
-        map.setView([d.lat, d.lon], 16);
+  let when=Number.isFinite(ts)?new Date(ts*1000):null;
+  $('coords').textContent='Ultima posizione: '+lat.toFixed(6)+', '+lon.toFixed(6)+(when?' · '+when.toLocaleString('it-IT'):'');
+  $('mapinfo').textContent='Ultima posizione ricevuta'+(when?' · '+when.toLocaleString('it-IT'):'');
+  $('marker').style.display='block';
+  const phi=lat*Math.PI/180,cx=(lon+180)/360*N*size,cy=(1-Math.log(Math.tan(phi)+1/Math.cos(phi))/Math.PI)/2*N*size;
+  const root=$('map'),tiles=$('tiles'),w=root.clientWidth,h=root.clientHeight;
+  if(!w||!h)return;
+  const left=Math.floor((cx-w/2)/size),right=Math.floor((cx+w/2)/size),top=Math.floor((cy-h/2)/size),bottom=Math.floor((cy+h/2)/size);
+  const visible=new Set();
+  for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
+    if(y<0||y>=N)continue;
+    const tx=((x%N)+N)%N,k=`${z}/${tx}/${y}`;visible.add(k);
+    let img=tileImages.get(k);if(!img){img=document.createElement('img');img.alt='';img.referrerPolicy='no-referrer';img.src='https://tile.openstreetmap.org/'+k+'.png';tiles.appendChild(img);tileImages.set(k,img)}
+    img.style.left=(x*size-cx+w/2)+'px';img.style.top=(y*size-cy+h/2)+'px';
+  }
+  for(const [k,img] of tileImages){if(!visible.has(k)){img.remove();tileImages.delete(k)}}
+}
+async function request(path,method='GET',body){
+  const u=auth.currentUser;if(!u)throw Error('Non autenticato');
+  const token=await u.getIdToken();
+  const response=await fetch(API+path,{method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined,cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status+' · '+(await response.text()).slice(0,140));
+  return response.json();
+}
+function label(id,text){$(id).textContent=text}
+async function refresh(){
+  if(!auth.currentUser)return;
+  try{
+    const data=await request('remoteStatus');
+    const s=data.status,c=data.command;
+    if(s){
+      label('armed',s.armed?'ARMATO':'DISARMATO');label('tracking',s.tracking?'ON':'OFF');
+      label('alarm',s.alarm?'ATTIVO':'NO');label('calls',s.callActive?'IN CORSO':s.callPending?'IN ATTESA':'FERME');
+      const age=Date.now()-Number(s.lastContactMs||0);
+      label('contact',age>=0&&age<180000?'ONLINE ('+Math.floor(age/1000)+' s)':'OFFLINE / non recente');
+    }else{for(const id of ['armed','tracking','alarm','calls','contact'])label(id,'Non disponibile')}
+    if(c){
+      const names={pending:'IN ATTESA',acked:'ESEGUITO',rejected:'RIFIUTATO',expired:'SCADUTO'};
+      label('command',(c.action||'')+' · '+(names[c.status]||c.status));
+      if(pendingId===c.id && c.status!=='pending'){
+        $('msg').textContent=c.status==='acked'?'Comando eseguito e confermato dall’ESP32.':'Comando '+(names[c.status]||c.status).toLowerCase()+'.';
+        pendingId=null;
       }
-    } catch (e) {
-      console.error("Errore loadLast:", e);
-    }
-  }
-
-  async function loadTrace() {
-    try {
-      const res = await fetch(`${BASE_URL}/trace?device=${DEVICE_ID}&n=500`);
-      if (!res.ok) return;
-
-      const arr = await res.json();
-      const points = arr
-        .filter(p => typeof p.lat === "number" && typeof p.lon === "number")
-        .map(p => [p.lat, p.lon]);
-
-      polyline.setLatLngs(points);
-    } catch (e) {
-      console.error("Errore loadTrace:", e);
-    }
-  }
-
-  async function refresh() {
-    await loadLast();
-    await loadTrace();
-  }
-
-  // Avvio
-  refresh();
-  setInterval(refresh, 10000);
+    }else label('command','Nessuno');
+    mapGps(data.gps);
+  }catch(e){$('msg').textContent='Impossibile leggere lo stato remoto: '+e.message;label('contact','NON DISPONIBILE')}
+}
+async function sendCommand(action){
+  if(busy)return;
+  busy=true;document.querySelectorAll('[data-action]').forEach(b=>b.disabled=true);
+  $('msg').textContent='Invio comando '+action+'...';
+  try{
+    const r=await request('remoteCommand','POST',{device:DEVICE,action});
+    pendingId=r.id;
+    $('msg').textContent='Comando '+action+' accettato da Firebase. In attesa della conferma ESP32 (fino a 60 s circa).';
+    await refresh();
+  }catch(e){$('msg').textContent='Comando non inviato: '+e.message}
+  finally{busy=false;document.querySelectorAll('[data-action]').forEach(b=>b.disabled=false)}
+}
+$('loginform').addEventListener('submit',async e=>{
+  e.preventDefault();$('loginmsg').textContent='Accesso in corso...';
+  try{await signInWithEmailAndPassword(auth,$('email').value,$('password').value);$('password').value='';$('loginmsg').textContent=''}
+  catch(err){$('loginmsg').textContent='Accesso non riuscito. Controlla credenziali o configurazione Firebase.';}
+});
+$('logout').addEventListener('click',()=>signOut(auth));
+document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>sendCommand(b.dataset.action)));
+onAuthStateChanged(auth,u=>{
+  $('signin').classList.toggle('hide',!!u);$('dashboard').classList.toggle('hide',!u);$('logout').classList.toggle('hide',!u);
+  if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}
+  if(u){refresh();refreshTimer=setInterval(refresh,15000)}
+});
 </script>
-
-</body>
-</html>
+</body></html>
